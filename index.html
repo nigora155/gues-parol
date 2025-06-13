@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Guess the Password</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(145deg, #4b6cb7, #182848);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .game-container {
+      background: #ffffff10;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+      width: 95%;
+      max-width: 500px;
+      text-align: center;
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(-20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+    }
+    .info {
+      margin: 10px 0;
+      font-size: 1.2em;
+    }
+    input {
+      font-size: 22px;
+      padding: 12px;
+      width: 85%;
+      border: none;
+      border-radius: 10px;
+      margin: 15px 0;
+      text-align: center;
+    }
+    button {
+      background: #00c9a7;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 1.1em;
+      margin: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #00a58c;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 1.2em;
+      min-height: 30px;
+    }
+    .timer {
+      font-weight: bold;
+      font-size: 1.3em;
+      margin-top: 10px;
+      color: #ffd700;
+    }
+    .display-boxes {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 10px;
+    }
+    .digit-box {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid #fff;
+      width: 60px;
+      height: 60px;
+      font-size: 2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      transition: transform 0.3s ease;
+    }
+    .digit-box.animate {
+      animation: pop 0.5s ease;
+    }
+    @keyframes pop {
+      0% { transform: scale(0.8); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <h1>🔐 Угадай пароль</h1>
+    <div class="info">Уровень: <span id="level">1</span> | Цифр: <span id="length">4</span></div>
+    <div class="timer">⏳ Осталось: <span id="timer">1500</span> сек</div>
+    <input type="text" id="guessInput" maxlength="4" placeholder="Введи пароль" />
+    <div>
+      <button onclick="checkGuess()">Проверить</button>
+      <button onclick="restartGame()">🔁 Сначала</button>
+    </div>
+    <div class="display-boxes" id="displayBoxes"></div>
+    <p id="message"></p>
+  </div>
+
+  <script>
+    let level = 1;
+    let maxLevel = 5;
+    let code = "";
+    let codeLength = 4;
+    let timeLeft = 1500; // 25 минут
+    let timerInterval;
+
+    function generateCode(length) {
+      let result = "";
+      for (let i = 0; i < length; i++) {
+        result += Math.floor(Math.random() * 10);
+      }
+      return result;
+    }
+
+    function updateLevel() {
+      document.getElementById("level").textContent = level;
+      document.getElementById("length").textContent = codeLength;
+      document.getElementById("guessInput").maxLength = codeLength;
+    }
+
+    function startTimer() {
+      timeLeft = 1500;
+      document.getElementById("timer").textContent = timeLeft;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          document.getElementById("message").textContent = `⛔ Время вышло! Код был: ${code}`;
+          document.getElementById("guessInput").disabled = true;
+        }
+      }, 1000);
+    }
+
+    function showCorrectDigits(input) {
+      const display = document.getElementById("displayBoxes");
+      display.innerHTML = "";
+      for (let i = 0; i < codeLength; i++) {
+        const box = document.createElement("div");
+        box.classList.add("digit-box");
+        if (input[i] === code[i]) {
+          box.textContent = input[i];
+          box.classList.add("animate");
+        } else {
+          box.textContent = "";
+        }
+        display.appendChild(box);
+      }
+    }
+
+    function checkGuess() {
+      const input = document.getElementById("guessInput").value;
+      if (input.length !== codeLength) {
+        document.getElementById("message").textContent = `Введите ${codeLength} цифры!`;
+        return;
+      }
+
+      showCorrectDigits(input);
+
+      let correct = 0;
+      for (let i = 0; i < codeLength; i++) {
+        if (input[i] === code[i]) {
+          correct++;
+        }
+      }
+
+      if (correct === codeLength) {
+        document.getElementById("message").textContent = `✅ Правильно! Переход на уровень ${level + 1}`;
+        level++;
+        if (level > maxLevel) {
+          clearInterval(timerInterval);
+          document.getElementById("message").textContent = `🎉 Ты прошёл все уровни! Молодец!`;
+          document.getElementById("guessInput").disabled = true;
+          return;
+        }
+        codeLength++;
+        code = generateCode(codeLength);
+        updateLevel();
+        document.getElementById("guessInput").value = "";
+        document.getElementById("guessInput").disabled = false;
+        startTimer();
+      } else {
+        document.getElementById("message").textContent = `❌ Угадано правильно: ${correct} цифр(ы) на месте.`;
+      }
+    }
+
+    function restartGame() {
+      level = 1;
+      codeLength = 4;
+      code = generateCode(codeLength);
+      updateLevel();
+      document.getElementById("guessInput").value = "";
+      document.getElementById("guessInput").disabled = false;
+      document.getElementById("message").textContent = "";
+      startTimer();
+      document.getElementById("displayBoxes").innerHTML = "";
+    }
+
+    restartGame();
+  </script>
+
+</body>
+</html>
